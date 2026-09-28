@@ -1,0 +1,79 @@
+# Local production-like stack:
+#   docker compose up --build
+#   API docs:   http://localhost:8000/docs
+#   Dashboard:  http://localhost:8501
+#   MLflow UI:  http://localhost:5000
+#
+# The API serves the exported champion baked into the image by default.
+# To serve straight from the registry instead, train against the compose MLflow server
+# (`make train-remote`) and set MODEL_URI=models:/churnops-model@champion below.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-churnops}
+      POSTGRES_USER: ${POSTGRES_USER:-churnops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mlflow:
+    build: .
+    image: churnops-api:local
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --artifacts-destination /mlflow/artifacts
+      --serve-artifacts
+      --allowed-hosts "localhost:5000,127.0.0.1:5000,mlflow:5000,localhost,mlflow"
+    user: root
+    volumes:
+      - mlflow:/mlflow
+    ports:
+      - "5000:5000"
+
+  api:
+    build: .
+    image: churnops-api:local
+    environment:
+      MODEL_URI: ${MODEL_URI:-/app/artifacts/champion_model}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-churnops}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-churnops}
+      LOG_LEVEL: INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    ports:
+      - "8000:8000"
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-churnops}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-churnops}
+      API_URL: http://api:8000
+      MONITORING_DIR: /app/artifacts/monitoring
+    volumes:
+      - ./artifacts/monitoring:/app/artifacts/monitoring:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+    ports:
+      - "8501:8501"
+
+volumes:
+  pgdata:
+  mlflow:

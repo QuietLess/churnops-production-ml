@@ -1,0 +1,38 @@
+[project]
+name = "churnops"
+version = "1.0.0"
+description = "End-to-end production ML system for churn risk classification: MLflow, FastAPI, Docker, CI/CD, monitoring and explainability."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Tolga Değirmenci" }]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["notebooks", "mlruns"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "S", "BLE", "RUF"]
+ignore = ["S101", "B008", "RUF012", "N803", "N806"]  # asserts in tests; FastAPI Depends(); sklearn X naming
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "N802"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = ["integration: touches MLflow stores, files or Evidently (slower)"]
+filterwarnings = [
+  "ignore::DeprecationWarning",
+  "ignore::PendingDeprecationWarning",
+  "ignore:.*httpx2.*",
+  "ignore:.*noload.*",
+]
+
+[tool.coverage.run]
+source = ["app", "src"]
+omit = ["src/training/train.py", "src/training/baseline.py", "src/data/download.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

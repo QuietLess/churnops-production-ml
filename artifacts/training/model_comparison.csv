@@ -1,0 +1,9 @@
+model,pr_auc,roc_auc,brier
+lightgbm_v2,0.6492,0.8515,0.1334
+lightgbm_v2_calibrated,0.6467,0.8508,0.1338
+lightgbm_v1_calibrated,0.6361,0.8447,0.1358
+lightgbm_v1,0.6355,0.845,0.1363
+random_forest,0.631,0.8424,0.1375
+logreg,0.6304,0.8453,0.1367
+lightgbm_v3,0.627,0.8369,0.1408
+lightgbm_v3_calibrated,0.6226,0.8368,0.1392

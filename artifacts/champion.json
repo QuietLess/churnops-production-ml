@@ -1,0 +1,6 @@
+{
+  "model_name": "churnops-model",
+  "alias": "champion",
+  "version": "1",
+  "valid_pr_auc": 0.6491644455071879
+}

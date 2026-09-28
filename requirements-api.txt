@@ -1,0 +1,16 @@
+# Runtime for the inference API image (pinned)
+pandas==3.0.2
+numpy==2.4.4
+scikit-learn==1.8.0
+lightgbm==4.7.0
+mlflow==3.16.1
+skops==0.16.0
+fastapi==0.141.1
+uvicorn[standard]==0.54.0
+pydantic==2.13.5
+sqlalchemy==2.1.0
+psycopg2-binary==2.9.13
+shap==0.52.0
+python-multipart==0.0.32
+matplotlib==3.10.8
+httpx==0.28.1

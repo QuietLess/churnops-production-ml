@@ -1,0 +1,50 @@
+feature,importance
+num__is_month_to_month,0.5640261612894862
+num__tenure,0.37196281323454716
+cat__Contract_Two year,0.2271393693166813
+cat__OnlineSecurity_No,0.22614646230917765
+cat__InternetService_Fiber optic,0.18418881851401267
+num__MonthlyCharges,0.1702300229248749
+cat__TechSupport_No,0.1678007084044324
+num__TotalCharges,0.1629567608568178
+num__avg_charge_per_tenure,0.1466459526647712
+cat__PaymentMethod_Electronic check,0.14002330822296938
+cat__PaperlessBilling_No,0.13169550785740303
+cat__OnlineBackup_No,0.08858293292960082
+cat__Contract_Month-to-month,0.08090907068950412
+cat__MultipleLines_No,0.0807617053106155
+cat__Dependents_No,0.05305557404758543
+cat__StreamingMovies_Yes,0.04761267540322959
+cat__Contract_One year,0.03763859290338845
+num__SeniorCitizen,0.03623426288768143
+num__service_count,0.02457237508798119
+cat__InternetService_No,0.023003158799846567
+cat__Dependents_Yes,0.021851071098018298
+cat__gender_Female,0.019202177481859914
+cat__StreamingTV_Yes,0.018694038601370717
+cat__MultipleLines_Yes,0.014709306086937532
+cat__PaperlessBilling_Yes,0.013612421476141473
+cat__OnlineSecurity_No internet service,0.009681506495545557
+cat__StreamingMovies_No,0.008906868742604098
+cat__PaymentMethod_Mailed check,0.008846821475891229
+cat__DeviceProtection_No,0.00880220109048222
+cat__PhoneService_No,0.008542358722217938
+cat__InternetService_DSL,0.007685170178067664
+cat__PaymentMethod_Credit card (automatic),0.006336685156146588
+cat__gender_Male,0.006208430623395179
+cat__DeviceProtection_Yes,0.005625149622813379
+cat__OnlineSecurity_Yes,0.005600764688522226
+cat__PaymentMethod_Bank transfer (automatic),0.005406825880920905
+num__has_support,0.004702811975744319
+cat__Partner_No,0.00430615318274359
+cat__OnlineBackup_Yes,0.00407378545616475
+cat__StreamingTV_No,0.003524445567113486
+cat__PhoneService_Yes,0.0032710675213316674
+cat__TechSupport_Yes,0.0025818116297550062
+cat__Partner_Yes,0.0019678417475592724
+cat__OnlineBackup_No internet service,0.0016644943395365595
+cat__MultipleLines_No phone service,0.0
+cat__TechSupport_No internet service,0.0
+cat__DeviceProtection_No internet service,0.0
+cat__StreamingMovies_No internet service,0.0
+cat__StreamingTV_No internet service,0.0

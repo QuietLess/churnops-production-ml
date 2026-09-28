@@ -1,0 +1,204 @@
+{
+  "run_at": "2026-09-25T11:14:11.635617+00:00",
+  "name": "pricing_shift",
+  "simulated": true,
+  "n_reference": 4930,
+  "n_current": 500,
+  "n_features": 19,
+  "n_drifted": 1,
+  "share_drifted": 0.0526,
+  "dataset_drift": false,
+  "features": [
+    {
+      "feature": "MonthlyCharges",
+      "method": "Wasserstein distance (normed)",
+      "score": 0.239104,
+      "threshold": 0.1,
+      "drifted": true
+    },
+    {
+      "feature": "TotalCharges",
+      "method": "Wasserstein distance (normed)",
+      "score": 0.090456,
+      "threshold": 0.1,
+      "drifted": false
+    },
+    {
+      "feature": "InternetService",
+      "method": "Jensen-Shannon distance",
+      "score": 0.076904,
+      "threshold": 0.1,
+      "drifted": false
+    },
+    {
+      "feature": "tenure",
+      "method": "Wasserstein distance (normed)",
+      "score": 0.070863,
+      "threshold": 0.1,
+      "drifted": false
+    },
+    {
+      "feature": "StreamingTV",
+      "method": "Jensen-Shannon distance",
+      "score": 0.063853,
+      "threshold": 0.1,
+      "drifted": false
+    },
+    {
+      "feature": "StreamingMovies",
+      "method": "Jensen-Shannon distance",
+      "score": 0.063002,
+      "threshold": 0.1,
+      "drifted": false
+    },
+    {
+      "feature": "PaymentMethod",
+      "method": "Jensen-Shannon distance",
+      "score": 0.061085,
+      "threshold": 0.1,
+      "drifted": false
+    },
+    {
+      "feature": "TechSupport",
+      "method": "Jensen-Shannon distance",
+      "score": 0.054482,
+      "threshold": 0.1,
+      "drifted": false
+    },
+    {
+      "feature": "OnlineSecurity",
+      "method": "Jensen-Shannon distance",
+      "score": 0.053795,
+      "threshold": 0.1,
+      "drifted": false
+    },
+    {
+      "feature": "OnlineBackup",
+      "method": "Jensen-Shannon distance",
+      "score": 0.053603,
+      "threshold": 0.1,
+      "drifted": false
+    },
+    {
+      "feature": "DeviceProtection",
+      "method": "Jensen-Shannon distance",
+      "score": 0.053599,
+      "threshold": 0.1,
+      "drifted": false
+    },
+    {
+      "feature": "MultipleLines",
+      "method": "Jensen-Shannon distance",
+      "score": 0.045536,
+      "threshold": 0.1,
+      "drifted": false
+    },
+    {
+      "feature": "PaperlessBilling",
+      "method": "Jensen-Shannon distance",
+      "score": 0.038731,
+      "threshold": 0.1,
+      "drifted": false
+    },
+    {
+      "feature": "SeniorCitizen",
+      "method": "Jensen-Shannon distance",
+      "score": 0.035387,
+      "threshold": 0.1,
+      "drifted": false
+    },
+    {
+      "feature": "Dependents",
+      "method": "Jensen-Shannon distance",
+      "score": 0.035182,
+      "threshold": 0.1,
+      "drifted": false
+    },
+    {
+      "feature": "gender",
+      "method": "Jensen-Shannon distance",
+      "score": 0.026447,
+      "threshold": 0.1,
+      "drifted": false
+    },
+    {
+      "feature": "Contract",
+      "method": "Jensen-Shannon distance",
+      "score": 0.024795,
+      "threshold": 0.1,
+      "drifted": false
+    },
+    {
+      "feature": "Partner",
+      "method": "Jensen-Shannon distance",
+      "score": 0.014756,
+      "threshold": 0.1,
+      "drifted": false
+    },
+    {
+      "feature": "PhoneService",
+      "method": "Jensen-Shannon distance",
+      "score": 0.003084,
+      "threshold": 0.1,
+      "drifted": false
+    }
+  ],
+  "schema": {
+    "missing_columns": [],
+    "unexpected_columns": [],
+    "missing_share": {
+      "gender": 0.0,
+      "SeniorCitizen": 0.0,
+      "Partner": 0.0,
+      "Dependents": 0.0,
+      "tenure": 0.0,
+      "PhoneService": 0.0,
+      "MultipleLines": 0.0,
+      "InternetService": 0.0,
+      "OnlineSecurity": 0.0,
+      "OnlineBackup": 0.0,
+      "DeviceProtection": 0.0,
+      "TechSupport": 0.0,
+      "StreamingTV": 0.0,
+      "StreamingMovies": 0.0,
+      "Contract": 0.0,
+      "PaperlessBilling": 0.0,
+      "PaymentMethod": 0.0,
+      "MonthlyCharges": 0.0,
+      "TotalCharges": 0.006
+    },
+    "reference_missing_share": {
+      "gender": 0.0,
+      "SeniorCitizen": 0.0,
+      "Partner": 0.0,
+      "Dependents": 0.0,
+      "tenure": 0.0,
+      "PhoneService": 0.0,
+      "MultipleLines": 0.0,
+      "InternetService": 0.0,
+      "OnlineSecurity": 0.0,
+      "OnlineBackup": 0.0,
+      "DeviceProtection": 0.0,
+      "TechSupport": 0.0,
+      "StreamingTV": 0.0,
+      "StreamingMovies": 0.0,
+      "Contract": 0.0,
+      "PaperlessBilling": 0.0,
+      "PaymentMethod": 0.0,
+      "MonthlyCharges": 0.0,
+      "TotalCharges": 0.0014
+    }
+  },
+  "predictions": {
+    "n_predictions": 500,
+    "avg_churn_probability": 0.2497,
+    "high_risk_share": 0.16,
+    "risk_distribution": {
+      "low": 347,
+      "high": 80,
+      "medium": 73
+    },
+    "model_version": "1"
+  },
+  "report_html": "report.html"
+}

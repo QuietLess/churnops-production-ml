@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.egg-info/
+
+# Secrets / local config
+.env
+*.pem
+*.key
+
+# Data (download reproducibly with `make data`)
+data/raw/*
+data/processed/*
+data/monitoring/*
+!data/**/.gitkeep
+*.db
+*.sqlite
+
+# MLflow local stores (lineage lives here; don't commit)
+mlruns/
+mlartifacts/
+mlflow.db
+
+# Large generated reports (summaries are committed, HTML is not)
+artifacts/monitoring/**/report.html
+artifacts/baseline_*.png
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+.ipynb_checkpoints/

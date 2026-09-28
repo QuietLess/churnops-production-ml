@@ -1,0 +1,1010 @@
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.skops
+    predict_fn: predict
+    python_version: 3.12.3
+  sklearn:
+    code: null
+    pickled_model: model.skops
+    serialization_format: skops
+    sklearn_version: 1.8.0
+    skops_trusted_types:
+    - collections.OrderedDict
+    - lightgbm.basic.Booster
+    - lightgbm.sklearn.LGBMClassifier
+    - numpy.dtype
+    - src.features.build.FeatureEngineer
+metadata:
+  explain_background:
+  - Contract: Month-to-month
+    Dependents: 'Yes'
+    DeviceProtection: No internet service
+    InternetService: 'No'
+    MonthlyCharges: 20.1
+    MultipleLines: 'No'
+    OnlineBackup: No internet service
+    OnlineSecurity: No internet service
+    PaperlessBilling: 'Yes'
+    Partner: 'Yes'
+    PaymentMethod: Credit card (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: No internet service
+    StreamingTV: No internet service
+    TechSupport: No internet service
+    TotalCharges: 232.4
+    gender: Female
+    tenure: 12
+  - Contract: One year
+    Dependents: 'No'
+    DeviceProtection: No internet service
+    InternetService: 'No'
+    MonthlyCharges: 20.25
+    MultipleLines: 'No'
+    OnlineBackup: No internet service
+    OnlineSecurity: No internet service
+    PaperlessBilling: 'No'
+    Partner: 'No'
+    PaymentMethod: Mailed check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: No internet service
+    StreamingTV: No internet service
+    TechSupport: No internet service
+    TotalCharges: 129.15
+    gender: Female
+    tenure: 7
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: No internet service
+    InternetService: 'No'
+    MonthlyCharges: 21.1
+    MultipleLines: 'No'
+    OnlineBackup: No internet service
+    OnlineSecurity: No internet service
+    PaperlessBilling: 'No'
+    Partner: 'No'
+    PaymentMethod: Credit card (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: No internet service
+    StreamingTV: No internet service
+    TechSupport: No internet service
+    TotalCharges: 385.55
+    gender: Male
+    tenure: 17
+  - Contract: One year
+    Dependents: 'No'
+    DeviceProtection: 'Yes'
+    InternetService: Fiber optic
+    MonthlyCharges: 99.95
+    MultipleLines: 'No'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Credit card (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'Yes'
+    StreamingTV: 'Yes'
+    TechSupport: 'No'
+    TotalCharges: 2292.75
+    gender: Male
+    tenure: 23
+  - Contract: Two year
+    Dependents: 'Yes'
+    DeviceProtection: 'Yes'
+    InternetService: DSL
+    MonthlyCharges: 43.95
+    MultipleLines: No phone service
+    OnlineBackup: 'No'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'Yes'
+    Partner: 'Yes'
+    PaymentMethod: Credit card (automatic)
+    PhoneService: 'No'
+    SeniorCitizen: 0
+    StreamingMovies: 'Yes'
+    StreamingTV: 'No'
+    TechSupport: 'No'
+    TotalCharges: 2960.1
+    gender: Female
+    tenure: 69
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: Fiber optic
+    MonthlyCharges: 80.25
+    MultipleLines: 'Yes'
+    OnlineBackup: 'Yes'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'No'
+    TechSupport: 'No'
+    TotalCharges: 1861.5
+    gender: Male
+    tenure: 24
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: Fiber optic
+    MonthlyCharges: 94.2
+    MultipleLines: 'Yes'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 1
+    StreamingMovies: 'Yes'
+    StreamingTV: 'Yes'
+    TechSupport: 'No'
+    TotalCharges: 1608.15
+    gender: Female
+    tenure: 17
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: DSL
+    MonthlyCharges: 45.55
+    MultipleLines: 'No'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'No'
+    Partner: 'No'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'No'
+    TechSupport: 'No'
+    TotalCharges: 84.4
+    gender: Female
+    tenure: 2
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: DSL
+    MonthlyCharges: 63.85
+    MultipleLines: 'Yes'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'No'
+    Partner: 'Yes'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'Yes'
+    StreamingTV: 'No'
+    TechSupport: 'Yes'
+    TotalCharges: 4264.6
+    gender: Male
+    tenure: 66
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: Fiber optic
+    MonthlyCharges: 86.25
+    MultipleLines: 'No'
+    OnlineBackup: 'Yes'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'No'
+    TechSupport: 'Yes'
+    TotalCharges: 181.65
+    gender: Female
+    tenure: 2
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: Fiber optic
+    MonthlyCharges: 84.5
+    MultipleLines: 'Yes'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'Yes'
+    StreamingTV: 'No'
+    TechSupport: 'No'
+    TotalCharges: 3906.7
+    gender: Female
+    tenure: 49
+  - Contract: One year
+    Dependents: 'Yes'
+    DeviceProtection: 'Yes'
+    InternetService: DSL
+    MonthlyCharges: 55.2
+    MultipleLines: 'No'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'No'
+    Partner: 'No'
+    PaymentMethod: Credit card (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'No'
+    TechSupport: 'Yes'
+    TotalCharges: 864.55
+    gender: Male
+    tenure: 15
+  - Contract: Two year
+    Dependents: 'No'
+    DeviceProtection: 'Yes'
+    InternetService: DSL
+    MonthlyCharges: 55.65
+    MultipleLines: 'No'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Mailed check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'No'
+    TechSupport: 'No'
+    TotalCharges: 1653.85
+    gender: Male
+    tenure: 30
+  - Contract: Month-to-month
+    Dependents: 'Yes'
+    DeviceProtection: 'No'
+    InternetService: DSL
+    MonthlyCharges: 44.5
+    MultipleLines: No phone service
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Electronic check
+    PhoneService: 'No'
+    SeniorCitizen: 0
+    StreamingMovies: 'Yes'
+    StreamingTV: 'Yes'
+    TechSupport: 'No'
+    TotalCharges: 1307.8
+    gender: Male
+    tenure: 30
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'Yes'
+    InternetService: Fiber optic
+    MonthlyCharges: 106.75
+    MultipleLines: 'Yes'
+    OnlineBackup: 'Yes'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'Yes'
+    Partner: 'Yes'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'Yes'
+    TechSupport: 'Yes'
+    TotalCharges: 6252.9
+    gender: Male
+    tenure: 59
+  - Contract: One year
+    Dependents: 'Yes'
+    DeviceProtection: 'Yes'
+    InternetService: DSL
+    MonthlyCharges: 70.75
+    MultipleLines: 'No'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'Yes'
+    Partner: 'Yes'
+    PaymentMethod: Bank transfer (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'Yes'
+    TechSupport: 'Yes'
+    TotalCharges: 4263.45
+    gender: Female
+    tenure: 62
+  - Contract: Month-to-month
+    Dependents: 'Yes'
+    DeviceProtection: 'Yes'
+    InternetService: Fiber optic
+    MonthlyCharges: 98.9
+    MultipleLines: 'No'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'Yes'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 1
+    StreamingMovies: 'Yes'
+    StreamingTV: 'Yes'
+    TechSupport: 'Yes'
+    TotalCharges: 2911.3
+    gender: Female
+    tenure: 31
+  - Contract: Two year
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: Fiber optic
+    MonthlyCharges: 93.75
+    MultipleLines: 'Yes'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'No'
+    Partner: 'No'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 1
+    StreamingMovies: 'Yes'
+    StreamingTV: 'No'
+    TechSupport: 'Yes'
+    TotalCharges: 5625.55
+    gender: Male
+    tenure: 57
+  - Contract: Month-to-month
+    Dependents: 'Yes'
+    DeviceProtection: 'No'
+    InternetService: DSL
+    MonthlyCharges: 60.95
+    MultipleLines: 'Yes'
+    OnlineBackup: 'Yes'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'No'
+    Partner: 'No'
+    PaymentMethod: Bank transfer (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'No'
+    TechSupport: 'No'
+    TotalCharges: 134.6
+    gender: Male
+    tenure: 2
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: Fiber optic
+    MonthlyCharges: 80.5
+    MultipleLines: 'Yes'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'No'
+    TechSupport: 'Yes'
+    TotalCharges: 2088.8
+    gender: Male
+    tenure: 26
+  - Contract: Two year
+    Dependents: 'Yes'
+    DeviceProtection: 'Yes'
+    InternetService: Fiber optic
+    MonthlyCharges: 116.85
+    MultipleLines: 'Yes'
+    OnlineBackup: 'Yes'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'Yes'
+    Partner: 'Yes'
+    PaymentMethod: Bank transfer (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'Yes'
+    StreamingTV: 'Yes'
+    TechSupport: 'Yes'
+    TotalCharges: 8477.7
+    gender: Female
+    tenure: 72
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'Yes'
+    InternetService: Fiber optic
+    MonthlyCharges: 93.35
+    MultipleLines: 'Yes'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'No'
+    Partner: 'Yes'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'Yes'
+    TechSupport: 'Yes'
+    TotalCharges: 5386.5
+    gender: Female
+    tenure: 59
+  - Contract: Two year
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: DSL
+    MonthlyCharges: 64.55
+    MultipleLines: 'Yes'
+    OnlineBackup: 'Yes'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Bank transfer (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 1
+    StreamingMovies: 'No'
+    StreamingTV: 'No'
+    TechSupport: 'Yes'
+    TotalCharges: 4250.1
+    gender: Male
+    tenure: 67
+  - Contract: One year
+    Dependents: 'Yes'
+    DeviceProtection: 'Yes'
+    InternetService: DSL
+    MonthlyCharges: 59.3
+    MultipleLines: 'No'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'Yes'
+    Partner: 'Yes'
+    PaymentMethod: Mailed check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'No'
+    TechSupport: 'Yes'
+    TotalCharges: 3274.35
+    gender: Female
+    tenure: 57
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: DSL
+    MonthlyCharges: 78.5
+    MultipleLines: 'No'
+    OnlineBackup: 'Yes'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'Yes'
+    StreamingTV: 'Yes'
+    TechSupport: 'Yes'
+    TotalCharges: 571.05
+    gender: Female
+    tenure: 7
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: Fiber optic
+    MonthlyCharges: 91.55
+    MultipleLines: 'No'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 1
+    StreamingMovies: 'Yes'
+    StreamingTV: 'Yes'
+    TechSupport: 'No'
+    TotalCharges: 3673.6
+    gender: Female
+    tenure: 40
+  - Contract: Two year
+    Dependents: 'Yes'
+    DeviceProtection: No internet service
+    InternetService: 'No'
+    MonthlyCharges: 25.3
+    MultipleLines: 'Yes'
+    OnlineBackup: No internet service
+    OnlineSecurity: No internet service
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Credit card (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: No internet service
+    StreamingTV: No internet service
+    TechSupport: No internet service
+    TotalCharges: 1673.8
+    gender: Male
+    tenure: 66
+  - Contract: One year
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: DSL
+    MonthlyCharges: 55.9
+    MultipleLines: 'No'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'No'
+    Partner: 'Yes'
+    PaymentMethod: Bank transfer (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'No'
+    TechSupport: 'Yes'
+    TotalCharges: 3848.8
+    gender: Female
+    tenure: 68
+  - Contract: Two year
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: DSL
+    MonthlyCharges: 79.35
+    MultipleLines: 'No'
+    OnlineBackup: 'Yes'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'Yes'
+    Partner: 'Yes'
+    PaymentMethod: Bank transfer (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'Yes'
+    StreamingTV: 'Yes'
+    TechSupport: 'Yes'
+    TotalCharges: 5753.25
+    gender: Male
+    tenure: 72
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: No internet service
+    InternetService: 'No'
+    MonthlyCharges: 19.75
+    MultipleLines: 'No'
+    OnlineBackup: No internet service
+    OnlineSecurity: No internet service
+    PaperlessBilling: 'No'
+    Partner: 'No'
+    PaymentMethod: Mailed check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: No internet service
+    StreamingTV: No internet service
+    TechSupport: No internet service
+    TotalCharges: 39.3
+    gender: Male
+    tenure: 2
+  - Contract: Two year
+    Dependents: 'Yes'
+    DeviceProtection: No internet service
+    InternetService: 'No'
+    MonthlyCharges: 24.7
+    MultipleLines: 'Yes'
+    OnlineBackup: No internet service
+    OnlineSecurity: No internet service
+    PaperlessBilling: 'No'
+    Partner: 'Yes'
+    PaymentMethod: Mailed check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: No internet service
+    StreamingTV: No internet service
+    TechSupport: No internet service
+    TotalCharges: 571.75
+    gender: Female
+    tenure: 24
+  - Contract: Month-to-month
+    Dependents: 'Yes'
+    DeviceProtection: 'No'
+    InternetService: DSL
+    MonthlyCharges: 30.5
+    MultipleLines: No phone service
+    OnlineBackup: 'Yes'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'Yes'
+    PaymentMethod: Electronic check
+    PhoneService: 'No'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'No'
+    TechSupport: 'No'
+    TotalCharges: 167.2
+    gender: Female
+    tenure: 5
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: DSL
+    MonthlyCharges: 43.8
+    MultipleLines: 'No'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'No'
+    Partner: 'No'
+    PaymentMethod: Bank transfer (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'No'
+    TechSupport: 'No'
+    TotalCharges: 540.95
+    gender: Female
+    tenure: 12
+  - Contract: One year
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: DSL
+    MonthlyCharges: 56.25
+    MultipleLines: 'No'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'Yes'
+    Partner: 'Yes'
+    PaymentMethod: Credit card (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'No'
+    TechSupport: 'Yes'
+    TotalCharges: 1292.2
+    gender: Male
+    tenure: 22
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: Fiber optic
+    MonthlyCharges: 94.7
+    MultipleLines: 'Yes'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Bank transfer (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'Yes'
+    StreamingTV: 'Yes'
+    TechSupport: 'No'
+    TotalCharges: 2362.1
+    gender: Male
+    tenure: 25
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'Yes'
+    InternetService: Fiber optic
+    MonthlyCharges: 103.0
+    MultipleLines: 'Yes'
+    OnlineBackup: 'Yes'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'Yes'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 1
+    StreamingMovies: 'Yes'
+    StreamingTV: 'Yes'
+    TechSupport: 'No'
+    TotalCharges: 4414.3
+    gender: Male
+    tenure: 43
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'Yes'
+    InternetService: Fiber optic
+    MonthlyCharges: 98.15
+    MultipleLines: 'No'
+    OnlineBackup: 'Yes'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Bank transfer (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'Yes'
+    StreamingTV: 'No'
+    TechSupport: 'Yes'
+    TotalCharges: 567.45
+    gender: Female
+    tenure: 6
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: Fiber optic
+    MonthlyCharges: 74.6
+    MultipleLines: 'Yes'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Bank transfer (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'No'
+    TechSupport: 'No'
+    TotalCharges: 3720.35
+    gender: Male
+    tenure: 49
+  - Contract: One year
+    Dependents: 'No'
+    DeviceProtection: 'Yes'
+    InternetService: Fiber optic
+    MonthlyCharges: 103.75
+    MultipleLines: 'No'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'Yes'
+    Partner: 'Yes'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'Yes'
+    StreamingTV: 'Yes'
+    TechSupport: 'Yes'
+    TotalCharges: 3361.05
+    gender: Female
+    tenure: 33
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: Fiber optic
+    MonthlyCharges: 95.0
+    MultipleLines: 'Yes'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'No'
+    Partner: 'No'
+    PaymentMethod: Mailed check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'Yes'
+    StreamingTV: 'Yes'
+    TechSupport: 'No'
+    TotalCharges: 655.5
+    gender: Male
+    tenure: 7
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'Yes'
+    InternetService: Fiber optic
+    MonthlyCharges: 94.45
+    MultipleLines: 'Yes'
+    OnlineBackup: 'Yes'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'Yes'
+    PaymentMethod: Credit card (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'Yes'
+    TechSupport: 'No'
+    TotalCharges: 5073.1
+    gender: Female
+    tenure: 55
+  - Contract: Month-to-month
+    Dependents: 'Yes'
+    DeviceProtection: 'No'
+    InternetService: Fiber optic
+    MonthlyCharges: 92.55
+    MultipleLines: 'Yes'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'Yes'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'Yes'
+    StreamingTV: 'Yes'
+    TechSupport: 'No'
+    TotalCharges: 1515.1
+    gender: Male
+    tenure: 17
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: Fiber optic
+    MonthlyCharges: 69.65
+    MultipleLines: 'No'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 1
+    StreamingMovies: 'No'
+    StreamingTV: 'No'
+    TechSupport: 'No'
+    TotalCharges: 69.65
+    gender: Male
+    tenure: 1
+  - Contract: Two year
+    Dependents: 'Yes'
+    DeviceProtection: 'Yes'
+    InternetService: Fiber optic
+    MonthlyCharges: 109.3
+    MultipleLines: 'No'
+    OnlineBackup: 'Yes'
+    OnlineSecurity: 'Yes'
+    PaperlessBilling: 'No'
+    Partner: 'Yes'
+    PaymentMethod: Credit card (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'Yes'
+    StreamingTV: 'Yes'
+    TechSupport: 'Yes'
+    TotalCharges: 7782.85
+    gender: Male
+    tenure: 71
+  - Contract: Two year
+    Dependents: 'No'
+    DeviceProtection: No internet service
+    InternetService: 'No'
+    MonthlyCharges: 19.85
+    MultipleLines: 'No'
+    OnlineBackup: No internet service
+    OnlineSecurity: No internet service
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Mailed check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: No internet service
+    StreamingTV: No internet service
+    TechSupport: No internet service
+    TotalCharges: 810.45
+    gender: Female
+    tenure: 41
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'Yes'
+    InternetService: DSL
+    MonthlyCharges: 48.75
+    MultipleLines: No phone service
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'Yes'
+    PaymentMethod: Electronic check
+    PhoneService: 'No'
+    SeniorCitizen: 0
+    StreamingMovies: 'Yes'
+    StreamingTV: 'Yes'
+    TechSupport: 'No'
+    TotalCharges: 442.2
+    gender: Female
+    tenure: 9
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'No'
+    InternetService: DSL
+    MonthlyCharges: 44.45
+    MultipleLines: 'No'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Mailed check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'No'
+    TechSupport: 'No'
+    TotalCharges: 44.45
+    gender: Female
+    tenure: 1
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'Yes'
+    InternetService: Fiber optic
+    MonthlyCharges: 100.05
+    MultipleLines: 'No'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'Yes'
+    PaymentMethod: Credit card (automatic)
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'Yes'
+    StreamingTV: 'Yes'
+    TechSupport: 'Yes'
+    TotalCharges: 4834.0
+    gender: Female
+    tenure: 48
+  - Contract: Month-to-month
+    Dependents: 'No'
+    DeviceProtection: 'Yes'
+    InternetService: Fiber optic
+    MonthlyCharges: 75.15
+    MultipleLines: 'No'
+    OnlineBackup: 'No'
+    OnlineSecurity: 'No'
+    PaperlessBilling: 'Yes'
+    Partner: 'No'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: 'No'
+    StreamingTV: 'No'
+    TechSupport: 'No'
+    TotalCharges: 525.0
+    gender: Female
+    tenure: 7
+  - Contract: Two year
+    Dependents: 'Yes'
+    DeviceProtection: No internet service
+    InternetService: 'No'
+    MonthlyCharges: 19.2
+    MultipleLines: 'No'
+    OnlineBackup: No internet service
+    OnlineSecurity: No internet service
+    PaperlessBilling: 'No'
+    Partner: 'Yes'
+    PaymentMethod: Electronic check
+    PhoneService: 'Yes'
+    SeniorCitizen: 0
+    StreamingMovies: No internet service
+    StreamingTV: No internet service
+    TechSupport: No internet service
+    TotalCharges: 903.7
+    gender: Male
+    tenure: 45
+  feature_version: v1
+  model_alias: champion
+  model_family: lightgbm
+  model_name: churnops-model
+  model_version: '1'
+  raw_features:
+  - gender
+  - SeniorCitizen
+  - Partner
+  - Dependents
+  - tenure
+  - PhoneService
+  - MultipleLines
+  - InternetService
+  - OnlineSecurity
+  - OnlineBackup
+  - DeviceProtection
+  - TechSupport
+  - StreamingTV
+  - StreamingMovies
+  - Contract
+  - PaperlessBilling
+  - PaymentMethod
+  - MonthlyCharges
+  - TotalCharges
+  risk_bands:
+    high_lower: 0.6
+    low_upper: 0.3
+  selected_candidate: lightgbm_v2
+  threshold: 0.12
+  threshold_strategy: min_validation_cost(fn=5.0,fp=1.0)
+  valid_pr_auc: 0.649164
+mlflow_version: 3.16.1
+model_id: null
+model_size_bytes: 785138
+model_uuid: 1944c71430ef47b79bebf909171575db
+prompts: null
+utc_time_created: '2026-09-25 11:04:33.766818'
