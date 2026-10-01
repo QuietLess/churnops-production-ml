@@ -26,16 +26,20 @@ from evidently.presets import DataDriftPreset
 from src.config import (
     CATEGORICAL_FEATURES,
     CHAMPION_EXPORT_DIR,
+    ID_COL,
     MONITORING_ARTIFACTS_DIR,
+    MONITORING_CONFIG,
     MONITORING_DATA_DIR,
     NUMERIC_FEATURES,
     RAW_FEATURES,
+    TARGET_COL,
 )
+from src.data.schema import validate_feature_frame
 from src.monitoring.batch_generator import SCENARIOS, SIMULATED_DIR
 from src.risk import risk_level
 
 logger = logging.getLogger(__name__)
-DATASET_DRIFT_SHARE = 0.5  # dataset flagged as drifted if >= 50% of features drift
+DATASET_DRIFT_SHARE: float = MONITORING_CONFIG["drift_share"]  # dataset drift if >= this share drifts
 
 
 def _is_drifted(method: str, value: float, threshold: float) -> bool:
@@ -46,7 +50,7 @@ def _is_drifted(method: str, value: float, threshold: float) -> bool:
 def schema_checks(reference: pd.DataFrame, current: pd.DataFrame) -> dict:
     return {
         "missing_columns": sorted(set(RAW_FEATURES) - set(current.columns)),
-        "unexpected_columns": sorted(set(current.columns) - set(RAW_FEATURES) - {"customerID"}),
+        "unexpected_columns": sorted(set(current.columns) - set(RAW_FEATURES) - {ID_COL, TARGET_COL}),
         "missing_share": {c: round(float(current[c].isna().mean()), 4) for c in RAW_FEATURES if c in current},
         "reference_missing_share": {c: round(float(reference[c].isna().mean()), 4) for c in RAW_FEATURES},
     }
@@ -71,9 +75,12 @@ def run_drift(
     simulated: bool = True,
     predictions: dict | None = None,
 ) -> dict:
+    schema = schema_checks(reference, current)
+    # Contract check before drift: a malformed batch is a data-quality incident, not "drift".
+    current_features = validate_feature_frame(current)
     definition = DataDefinition(numerical_columns=NUMERIC_FEATURES, categorical_columns=CATEGORICAL_FEATURES)
     snapshot = Report([DataDriftPreset(drift_share=DATASET_DRIFT_SHARE)]).run(
-        current_data=Dataset.from_pandas(current[RAW_FEATURES], data_definition=definition),
+        current_data=Dataset.from_pandas(current_features, data_definition=definition),
         reference_data=Dataset.from_pandas(reference[RAW_FEATURES], data_definition=definition),
     )
     features = []
@@ -109,7 +116,7 @@ def run_drift(
         "share_drifted": round(n_drifted / max(len(features), 1), 4),
         "dataset_drift": n_drifted / max(len(features), 1) >= DATASET_DRIFT_SHARE,
         "features": features,
-        "schema": schema_checks(reference, current),
+        "schema": schema,
         "predictions": predictions,
         "report_html": "report.html",  # relative to this summary.json
     }

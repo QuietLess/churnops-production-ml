@@ -8,6 +8,8 @@ Selection protocol (the test set is only touched once, at the very end):
    tie-broken by Brier score (better calibration), then by simplicity.
 3. Decision threshold = lowest hypothetical cost on validation (FN=5, FP=1).
 4. Evaluate the selected pipeline once on test, log it and register a new version.
+
+Hyperparameters and the candidate grid come from the `training` section of configs/config.yaml.
 """
 
 from __future__ import annotations
@@ -16,7 +18,10 @@ import argparse
 import json
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from functools import partial
+from typing import Any
 
 import mlflow
 import numpy as np
@@ -27,6 +32,7 @@ from mlflow.models import infer_signature
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
 
 from src.config import (
     ARTIFACTS_DIR,
@@ -43,6 +49,7 @@ from src.config import (
     RISK_HIGH_LOWER,
     RISK_LOW_UPPER,
     TARGET_COL,
+    TRAINING_CONFIG,
 )
 from src.data.split import split_data
 from src.data.validate import load_validated
@@ -52,8 +59,8 @@ from src.training.serialization import trusted_types_for
 
 logger = logging.getLogger(__name__)
 
-PR_AUC_TOLERANCE = 0.005
-EXPLAIN_BACKGROUND_ROWS = 50
+PR_AUC_TOLERANCE: float = TRAINING_CONFIG["pr_auc_tolerance"]
+EXPLAIN_BACKGROUND_ROWS: int = TRAINING_CONFIG["explain_background_rows"]
 TRAINING_REPORT = ARTIFACTS_DIR / "training"
 
 
@@ -63,30 +70,26 @@ class Candidate:
     family: str
     complexity: int  # lower = simpler; used as final tie-breaker
     params: dict
-    make: callable = field(repr=False)
+    make: Callable[[], Any] = field(repr=False)
 
 
-def candidates(quick: bool = False) -> list[Candidate]:
-    lr_params = {"C": 1.0, "max_iter": 2000, "class_weight": None}
-    rf_params = {"n_estimators": 400, "min_samples_leaf": 5, "max_features": "sqrt"}
-    lgbm_grid = [
-        {"n_estimators": 300, "learning_rate": 0.03, "num_leaves": 15, "min_child_samples": 40},
-        {"n_estimators": 500, "learning_rate": 0.02, "num_leaves": 7, "min_child_samples": 60},
-        {"n_estimators": 200, "learning_rate": 0.05, "num_leaves": 31, "min_child_samples": 20},
-    ]
+def candidates(quick: bool = False, cfg: dict | None = None) -> list[Candidate]:
+    cfg = cfg or TRAINING_CONFIG
+    lr_params = dict(cfg["logreg"])
+    rf_params = dict(cfg["random_forest"])
+    lgbm_grid = [dict(p) for p in cfg["lightgbm_grid"]]
+    lgbm_shared = dict(cfg["lightgbm_shared"])
+    calibration = cfg["calibration"]
     if quick:
-        rf_params["n_estimators"] = 100
-        lgbm_grid = lgbm_grid[:1]
+        rf_params["n_estimators"] = cfg["quick"]["random_forest_n_estimators"]
+        lgbm_grid = lgbm_grid[: cfg["quick"]["lightgbm_grid_size"]]
 
-    def lgbm(p):
-        return LGBMClassifier(
-            **p,
-            subsample=0.8,
-            subsample_freq=1,
-            colsample_bytree=0.8,
-            random_state=RANDOM_STATE,
-            verbose=-1,
-        )
+    def lgbm_pipeline(p: dict) -> Pipeline:
+        model = LGBMClassifier(**p, **lgbm_shared, random_state=RANDOM_STATE, verbose=-1)
+        return build_pipeline(model, scale_numeric=False)
+
+    def calibrated(p: dict) -> CalibratedClassifierCV:
+        return CalibratedClassifierCV(lgbm_pipeline(p), method=calibration["method"], cv=calibration["cv"])
 
     out = [
         Candidate(
@@ -108,20 +111,14 @@ def candidates(quick: bool = False) -> list[Candidate]:
         ),
     ]
     for i, p in enumerate(lgbm_grid, start=1):
-        out.append(
-            Candidate(
-                f"lightgbm_v{i}", "lightgbm", 3, p, lambda p=p: build_pipeline(lgbm(p), scale_numeric=False)
-            )
-        )
+        out.append(Candidate(f"lightgbm_v{i}", "lightgbm", 3, p, partial(lgbm_pipeline, p)))
         out.append(
             Candidate(
                 f"lightgbm_v{i}_calibrated",
-                "lightgbm+sigmoid_calibration",
+                f"lightgbm+{calibration['method']}_calibration",
                 4,
-                {**p, "calibration": "sigmoid", "calibration_cv": 5},
-                lambda p=p: CalibratedClassifierCV(
-                    build_pipeline(lgbm(p), scale_numeric=False), method="sigmoid", cv=5
-                ),
+                {**p, "calibration": calibration["method"], "calibration_cv": calibration["cv"]},
+                partial(calibrated, p),
             )
         )
     return out
@@ -133,7 +130,7 @@ def select_best(results: list[dict]) -> dict:
     return min(close, key=lambda r: (round(r["valid"]["brier"], 4), r["complexity"]))
 
 
-def global_importance(model, X_valid: pd.DataFrame, out_path) -> pd.DataFrame | None:
+def global_importance(model, X_valid: pd.DataFrame, out_path) -> pd.DataFrame:
     """SHAP summary for tree pipelines, coefficient magnitudes for logistic regression."""
     pipe = model.calibrated_classifiers_[0].estimator if hasattr(model, "calibrated_classifiers_") else model
     est = pipe.named_steps["model"]

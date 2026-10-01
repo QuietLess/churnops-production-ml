@@ -6,6 +6,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -22,7 +23,7 @@ class ModelLoadError(RuntimeError):
 
 @dataclass
 class ModelService:
-    model: object  # sklearn-compatible, exposes predict_proba on raw feature frames
+    model: Any  # sklearn-compatible, exposes predict_proba on raw feature frames
     threshold: float
     model_name: str
     model_version: str
@@ -91,7 +92,7 @@ class ModelService:
     # --------------------------------------------------------------- inference
     def predict_proba(self, records: list[dict]) -> np.ndarray:
         frame = pd.DataFrame.from_records(records, columns=RAW_FEATURES)
-        proba = np.asarray(self.model.predict_proba(frame)[:, 1], dtype=float)
+        proba = np.asarray(self.model.predict_proba(frame)[:, 1], dtype=np.float64)
         if not np.all(np.isfinite(proba)):
             raise ValueError("Model produced non-finite probabilities")
         return proba
@@ -146,7 +147,7 @@ class ModelService:
             raise RuntimeError("This model version has no explanation background data")
         x = self._encode(pd.DataFrame.from_records([record], columns=RAW_FEATURES))
         sv = self._get_explainer()(x, max_evals=2 * len(RAW_FEATURES) + 1)
-        contribs = [
+        contribs: list[dict[str, Any]] = [
             {"feature": f, "value": record.get(f), "contribution": round(float(v), 6)}
             for f, v in zip(RAW_FEATURES, sv.values[0], strict=True)
         ]

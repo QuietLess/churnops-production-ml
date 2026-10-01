@@ -18,6 +18,14 @@ ignore = ["S101", "B008", "RUF012", "N803", "N806"]  # asserts in tests; FastAPI
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "N802"]
 
+[tool.mypy]
+python_version = "3.12"
+files = ["app", "src"]
+ignore_missing_imports = true  # most ML libraries ship no type stubs
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"

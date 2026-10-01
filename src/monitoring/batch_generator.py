@@ -6,23 +6,39 @@ future traffic. Every scenario is deterministic (fixed seeds) and labelled SIM-*
 Usage:
   python -m src.monitoring.batch_generator                     # write all scenarios
   python -m src.monitoring.batch_generator --send http://localhost:8000   # also POST to API
+  python -m src.monitoring.batch_generator --send http://localhost:8000 --feedback
+      # ...and then POST the true Churn label of each customer to /feedback (simulated
+      # delayed ground truth -> live performance metrics). Set CHURNOPS_API_KEY if the
+      # API requires a key.
+
+Caveat for --feedback: labels are the original customers' outcomes. In scenarios that
+perturb values (pricing_shift) the "true" label would also change in reality; here it does not.
 """
 
 from __future__ import annotations
 
 import argparse
 import logging
+import os
 from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from src.config import ID_COL, MONITORING_DATA_DIR, PROCESSED_DIR, RANDOM_STATE, RAW_FEATURES
+from src.config import (
+    ID_COL,
+    MONITORING_CONFIG,
+    MONITORING_DATA_DIR,
+    PROCESSED_DIR,
+    RANDOM_STATE,
+    RAW_FEATURES,
+    TARGET_COL,
+)
 
 logger = logging.getLogger(__name__)
 SIMULATED_DIR = MONITORING_DATA_DIR / "simulated"
-DEFAULT_BATCH_SIZE = 500
+DEFAULT_BATCH_SIZE: int = MONITORING_CONFIG["simulated_batch_size"]
 
 
 def _weighted_sample(df: pd.DataFrame, weights: pd.Series, n: int, seed: int) -> pd.DataFrame:
@@ -71,25 +87,50 @@ SCENARIOS: dict[str, Callable[[pd.DataFrame, int, int], pd.DataFrame]] = {
 
 
 def generate(
-    source: pd.DataFrame, scenario: str, n: int = DEFAULT_BATCH_SIZE, seed: int = RANDOM_STATE
+    source: pd.DataFrame,
+    scenario: str,
+    n: int = DEFAULT_BATCH_SIZE,
+    seed: int = RANDOM_STATE,
+    keep_target: bool = False,
 ) -> pd.DataFrame:
+    """Build a batch. keep_target=True also carries the true Churn label (for --feedback)."""
     if scenario not in SCENARIOS:
         raise ValueError(f"Unknown scenario {scenario!r}; choose from {sorted(SCENARIOS)}")
-    batch = SCENARIOS[scenario](source[RAW_FEATURES], n, seed).reset_index(drop=True)
+    columns = [*RAW_FEATURES, TARGET_COL] if keep_target else RAW_FEATURES
+    batch = SCENARIOS[scenario](source[columns], n, seed).reset_index(drop=True)
     batch.insert(0, ID_COL, [f"SIM-{scenario}-{i:05d}" for i in range(len(batch))])
     return batch
 
 
-def send_to_api(batch: pd.DataFrame, api_url: str, chunk: int = 200) -> int:
+def send_to_api(
+    batch: pd.DataFrame,
+    api_url: str,
+    chunk: int = 200,
+    feedback: bool = False,
+    api_key: str | None = None,
+) -> int:
+    """POST the batch to /batch-predict; with feedback=True also POST its labels to /feedback."""
     import httpx
 
+    if feedback and TARGET_COL not in batch:
+        raise ValueError("feedback=True needs a batch generated with keep_target=True")
+    labels = batch[TARGET_COL].tolist() if TARGET_COL in batch else None
+    features = batch.drop(columns=[TARGET_COL], errors="ignore")
+    records = features.astype(object).where(features.notna(), None).to_dict(orient="records")
+    headers = {"X-API-Key": api_key} if api_key else {}
     sent = 0
-    records = batch.astype(object).where(batch.notna(), None).to_dict(orient="records")
-    with httpx.Client(base_url=api_url, timeout=60) as client:
+    with httpx.Client(base_url=api_url, timeout=60, headers=headers) as client:
         for i in range(0, len(records), chunk):
             resp = client.post("/batch-predict", json={"records": records[i : i + chunk]})
             resp.raise_for_status()
-            sent += resp.json()["count"]
+            predictions = resp.json()["predictions"]
+            sent += len(predictions)
+            if feedback and labels is not None:
+                outcomes = [
+                    {"prediction_id": p["prediction_id"], "actual_outcome": int(y)}
+                    for p, y in zip(predictions, labels[i : i + chunk], strict=True)
+                ]
+                client.post("/feedback", json={"outcomes": outcomes}).raise_for_status()
     return sent
 
 
@@ -102,17 +143,25 @@ def main() -> None:
     parser.add_argument("--n", type=int, default=DEFAULT_BATCH_SIZE)
     parser.add_argument("--source", type=Path, default=PROCESSED_DIR / "test.csv")
     parser.add_argument("--send", metavar="API_URL", help="POST batches to a running API")
+    parser.add_argument(
+        "--feedback", action="store_true", help="with --send: also POST true labels to /feedback"
+    )
     args = parser.parse_args()
+    if args.feedback and not args.send:
+        parser.error("--feedback requires --send")
 
     source = pd.read_csv(args.source)
     SIMULATED_DIR.mkdir(parents=True, exist_ok=True)
     for i, name in enumerate(args.scenario or list(SCENARIOS)):
-        batch = generate(source, name, n=args.n, seed=RANDOM_STATE + i)
+        batch = generate(source, name, n=args.n, seed=RANDOM_STATE + i, keep_target=args.feedback)
         path = SIMULATED_DIR / f"{name}.csv"
-        batch.to_csv(path, index=False)
+        batch.drop(columns=[TARGET_COL], errors="ignore").to_csv(path, index=False)  # features only
         logger.info("SIMULATED batch %-15s rows=%d -> %s", name, len(batch), path)
         if args.send:
-            logger.info("Sent %d records to %s", send_to_api(batch, args.send), args.send)
+            n_sent = send_to_api(
+                batch, args.send, feedback=args.feedback, api_key=os.getenv("CHURNOPS_API_KEY")
+            )
+            logger.info("Sent %d records to %s (feedback=%s)", n_sent, args.send, args.feedback)
 
 
 if __name__ == "__main__":

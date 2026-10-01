@@ -2,14 +2,38 @@
 
 Everything that training, serving and monitoring must agree on lives here, so the
 feature contract is defined exactly once.
+
+Two kinds of settings:
+- The *feature contract* (columns, allowed categories) is code: the API schema is typed against it.
+- *Tunable values* (hyperparameters, split sizes, costs, monitoring thresholds) come from
+  configs/config.yaml, or from the file named by the CHURNOPS_CONFIG env var.
+Deployment settings (MLflow URI, model name/alias) can additionally be overridden by env vars.
 """
 
 from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Any
+
+import yaml
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+DEFAULT_CONFIG_PATH = ROOT_DIR / "configs" / "config.yaml"
+
+
+def load_config(path: str | Path | None = None) -> dict[str, Any]:
+    """Read the YAML config. Relative paths are resolved against the project root."""
+    path = Path(path or os.getenv("CHURNOPS_CONFIG") or DEFAULT_CONFIG_PATH)
+    if not path.is_absolute():
+        path = ROOT_DIR / path
+    with path.open(encoding="utf-8") as fh:
+        return yaml.safe_load(fh)
+
+
+CONFIG = load_config()
+TRAINING_CONFIG: dict[str, Any] = CONFIG["training"]
+MONITORING_CONFIG: dict[str, Any] = CONFIG["monitoring"]
 
 # --- Paths -----------------------------------------------------------------
 DATA_DIR = ROOT_DIR / "data"
@@ -20,14 +44,12 @@ ARTIFACTS_DIR = ROOT_DIR / "artifacts"
 MONITORING_ARTIFACTS_DIR = ARTIFACTS_DIR / "monitoring"
 CHAMPION_EXPORT_DIR = ARTIFACTS_DIR / "champion_model"
 
-RAW_DATA_URL = (
-    "https://raw.githubusercontent.com/IBM/telco-customer-churn-on-icp4d/master/data/Telco-Customer-Churn.csv"
-)
+RAW_DATA_URL: str = CONFIG["data"]["raw_url"]
 
 # --- Reproducibility -------------------------------------------------------
-RANDOM_STATE = 42
-TEST_SIZE = 0.15
-VALID_SIZE = 0.15
+RANDOM_STATE: int = CONFIG["data"]["random_state"]
+TEST_SIZE: float = CONFIG["data"]["test_size"]
+VALID_SIZE: float = CONFIG["data"]["valid_size"]
 
 # --- Data contract ---------------------------------------------------------
 ID_COL = "customerID"
@@ -95,16 +117,18 @@ RAW_FEATURES = [
 ]
 EXPECTED_COLUMNS = {ID_COL, TARGET_COL, *RAW_FEATURES}
 
-FEATURE_VERSION = "v1"
+FEATURE_VERSION: str = CONFIG["features"]["version"]
 
 # --- Decision policy (portfolio assumptions, NOT real telecom economics) ----
-FALSE_NEGATIVE_COST = 5.0
-FALSE_POSITIVE_COST = 1.0
-RISK_LOW_UPPER = 0.30  # p < 0.30 -> low
-RISK_HIGH_LOWER = 0.60  # p > 0.60 -> high, otherwise medium
+_policy = CONFIG["decision_policy"]
+FALSE_NEGATIVE_COST: float = _policy["false_negative_cost"]
+FALSE_POSITIVE_COST: float = _policy["false_positive_cost"]
+RISK_LOW_UPPER: float = _policy["risk_low_upper"]  # p < low_upper -> low
+RISK_HIGH_LOWER: float = _policy["risk_high_lower"]  # p > high_lower -> high, otherwise medium
 
-# --- MLflow ----------------------------------------------------------------
+# --- MLflow (env vars override the YAML for deployment) ----------------------
+_mlflow = CONFIG["mlflow"]
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", f"sqlite:///{ROOT_DIR / 'mlflow.db'}")
-MLFLOW_EXPERIMENT = os.getenv("MLFLOW_EXPERIMENT", "churnops_training")
-REGISTERED_MODEL_NAME = os.getenv("REGISTERED_MODEL_NAME", "churnops-model")
-MODEL_ALIAS = os.getenv("MODEL_ALIAS", "champion")
+MLFLOW_EXPERIMENT = os.getenv("MLFLOW_EXPERIMENT", _mlflow["experiment"])
+REGISTERED_MODEL_NAME = os.getenv("REGISTERED_MODEL_NAME", _mlflow["registered_model_name"])
+MODEL_ALIAS = os.getenv("MODEL_ALIAS", _mlflow["model_alias"])

@@ -5,11 +5,16 @@ Usage:
   python -m src.training.register --version 3     # promote a specific version
   python -m src.training.register --force         # skip the challenger check
   python -m src.training.register --export-only   # just export the current champion
+  python -m src.training.register --rollback      # put the previous champion back
 
 Light champion/challenger rule: the candidate is promoted only if its validation PR-AUC
 is not lower than the current champion's. The promoted model is exported to
 artifacts/champion_model/ so it can be baked into a deployment image when a remote
 registry is not available (documented compromise; lineage stays in MLflow).
+
+Rollback: every promotion tags the new champion with `previous_champion=<old version>`.
+`--rollback` moves the alias back to that version (repeatable: it walks back the history)
+and tags the demoted version `rolled_back`, so a plain `promote` will not re-promote it.
 """
 
 from __future__ import annotations
@@ -18,6 +23,7 @@ import argparse
 import json
 import logging
 import shutil
+from datetime import UTC, datetime
 from pathlib import Path
 
 import mlflow
@@ -84,6 +90,19 @@ def promote(
     candidate = client.get_model_version(REGISTERED_MODEL_NAME, version)
     cand_score = float(candidate.tags.get("valid_pr_auc", "nan"))
 
+    if "rolled_back" in candidate.tags and not force:
+        logger.warning(
+            "v%s was rolled back on %s; use --force to promote it again.",
+            version,
+            candidate.tags["rolled_back"],
+        )
+        serving = str(champion.version) if champion is not None else None
+        if serving and export_dir is not None:
+            export_champion(serving, export_dir)
+        if serving is None:
+            raise SystemExit(f"v{version} was rolled back and there is no champion to keep serving.")
+        return serving, False
+
     if champion is not None and str(champion.version) != version and not force:
         champ_score = float(champion.tags.get("valid_pr_auc", "nan"))
         if cand_score < champ_score:
@@ -99,10 +118,33 @@ def promote(
             return str(champion.version), False
 
     client.set_registered_model_alias(REGISTERED_MODEL_NAME, MODEL_ALIAS, version)
+    if champion is not None and str(champion.version) != version:
+        client.set_model_version_tag(
+            REGISTERED_MODEL_NAME, version, "previous_champion", str(champion.version)
+        )
     logger.info("Alias %s -> %s v%s", MODEL_ALIAS, REGISTERED_MODEL_NAME, version)
     if export_dir is not None:
         export_champion(version, export_dir)
     return version, True
+
+
+def rollback(client: MlflowClient, export_dir: Path | None = CHAMPION_EXPORT_DIR) -> tuple[str, str]:
+    """Point the champion alias back at the version it replaced. Returns (demoted, restored)."""
+    champion = current_champion(client)
+    if champion is None:
+        raise SystemExit("No champion alias set; nothing to roll back.")
+    previous = champion.tags.get("previous_champion")
+    if not previous:
+        raise SystemExit(f"Champion v{champion.version} has no previous_champion tag; cannot roll back.")
+    demoted = str(champion.version)
+    client.set_registered_model_alias(REGISTERED_MODEL_NAME, MODEL_ALIAS, previous)
+    client.set_model_version_tag(
+        REGISTERED_MODEL_NAME, demoted, "rolled_back", datetime.now(UTC).isoformat(timespec="seconds")
+    )
+    logger.warning("ROLLBACK: alias %s v%s -> v%s", MODEL_ALIAS, demoted, previous)
+    if export_dir is not None:
+        export_champion(previous, export_dir)
+    return demoted, previous
 
 
 def main() -> None:
@@ -113,6 +155,7 @@ def main() -> None:
     parser.add_argument("--version", help="model version to promote (default: latest)")
     parser.add_argument("--force", action="store_true", help="promote even if worse than champion")
     parser.add_argument("--export-only", action="store_true", help="only export current champion")
+    parser.add_argument("--rollback", action="store_true", help="restore the previous champion")
     args = parser.parse_args()
 
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
@@ -125,7 +168,11 @@ def main() -> None:
         export_champion(str(champion.version))
         return
 
-    version, promoted = promote(client, args.version, args.force)
+    if args.rollback:
+        _, version = rollback(client)
+        promoted = True
+    else:
+        version, promoted = promote(client, args.version, args.force)
     score = client.get_model_version(REGISTERED_MODEL_NAME, version).tags.get("valid_pr_auc")
     (ARTIFACTS_DIR / "champion.json").write_text(
         json.dumps(
@@ -135,6 +182,7 @@ def main() -> None:
                 "version": version,
                 "valid_pr_auc": float(score) if score else None,
                 "promoted_this_run": promoted,
+                "rolled_back_this_run": args.rollback,
             },
             indent=2,
         )

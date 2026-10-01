@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import HTTPException, Request
 
 from app.db import PredictionRepository
+from app.metrics import ApiMetrics
 from app.model_service import ModelService
 from app.settings import Settings
 
@@ -20,3 +21,7 @@ def get_repository(request: Request) -> PredictionRepository | None:
 
 def get_settings(request: Request) -> Settings:
     return request.app.state.settings
+
+
+def get_metrics(request: Request) -> ApiMetrics:
+    return request.app.state.metrics

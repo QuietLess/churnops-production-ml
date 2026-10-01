@@ -2,8 +2,9 @@
 PY ?= python
 API_URL ?= http://localhost:8000
 
-.PHONY: help install data baseline train promote test test-fast lint format api dashboard \
-        simulate simulate-traffic drift drift-db mlflow-ui docker docker-run up down train-remote all
+.PHONY: help install data baseline train promote rollback test test-fast lint typecheck check format api \
+        dashboard simulate simulate-traffic simulate-feedback drift drift-db performance mlflow-ui docker \
+        docker-run up down train-remote all
 
 help:  ## show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -23,6 +24,9 @@ train:  ## train candidates, log to MLflow, register a new version
 promote:  ## set the champion alias (challenger check) and export the champion
 	$(PY) -m src.training.register
 
+rollback:  ## move the champion alias back to the previous champion and re-export it
+	$(PY) -m src.training.register --rollback
+
 test:  ## full test suite with coverage
 	$(PY) -m pytest --cov --cov-report=term
 
@@ -32,6 +36,11 @@ test-fast:  ## unit + API tests only
 lint:  ## ruff lint + format check
 	$(PY) -m ruff check .
 	$(PY) -m ruff format --check .
+
+typecheck:  ## mypy static type check (config in pyproject.toml)
+	$(PY) -m mypy
+
+check: lint typecheck test  ## everything CI's quality job runs
 
 format:  ## auto-format
 	$(PY) -m ruff check . --fix
@@ -49,11 +58,17 @@ simulate:  ## write SIMULATED production batches
 simulate-traffic:  ## write batches AND send them to the running API
 	$(PY) -m src.monitoring.batch_generator --send $(API_URL)
 
+simulate-feedback:  ## send batches to the API AND post their true labels to /feedback
+	$(PY) -m src.monitoring.batch_generator --send $(API_URL) --feedback
+
 drift:  ## Evidently drift reports for every simulated scenario
 	$(PY) -m src.monitoring.drift --all-scenarios
 
 drift-db:  ## drift report on the last 500 logged API requests
 	$(PY) -m src.monitoring.drift --from-db --last 500
+
+performance:  ## live ROC-AUC / F1 per model version vs. the test baseline (needs feedback)
+	$(PY) -m src.monitoring.performance
 
 mlflow-ui:  ## MLflow UI for the local SQLite store
 	$(PY) -m mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5000
@@ -64,7 +79,7 @@ docker:  ## build the API image
 docker-run:  ## run the API image on :8000
 	docker run --rm -p 8000:8000 churnops-api:local
 
-up:  ## full local stack (postgres, mlflow, api, dashboard)
+up:  ## full local stack (postgres, mlflow, api, dashboard, prometheus, grafana)
 	docker compose up --build -d
 
 down:
