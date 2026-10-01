@@ -3,6 +3,8 @@
 #   API docs:   http://localhost:8000/docs
 #   Dashboard:  http://localhost:8501
 #   MLflow UI:  http://localhost:5000
+#   Prometheus: http://localhost:9090   (targets, alert rules)
+#   Grafana:    http://localhost:3000   (ChurnOps dashboard; admin password from .env)
 #
 # The API serves the exported champion baked into the image by default.
 # To serve straight from the registry instead, train against the compose MLflow server
@@ -48,6 +50,8 @@ services:
       MLFLOW_TRACKING_URI: http://mlflow:5000
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-churnops}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-churnops}
       LOG_LEVEL: INFO
+      API_KEYS: ${API_KEYS:-}
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-600}
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,6 +78,37 @@ services:
     ports:
       - "8501:8501"
 
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+    volumes:
+      - ./ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus:/prometheus
+    depends_on:
+      - api
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/churnops.json
+    volumes:
+      - ./ops/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./ops/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana:/var/lib/grafana
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
+
 volumes:
   pgdata:
   mlflow:
+  prometheus:
+  grafana:

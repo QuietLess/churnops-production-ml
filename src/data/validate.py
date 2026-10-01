@@ -98,4 +98,6 @@ def load_validated(path: Path = RAW_DATA_PATH) -> pd.DataFrame:
         raise FileNotFoundError(f"{path} not found. Run `make data` first.")
     raw = pd.read_csv(path)
     validate_raw(raw)
-    return clean(raw)
+    from src.data.schema import validate_training_frame  # local import: schema imports this module
+
+    return validate_training_frame(clean(raw))

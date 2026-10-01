@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import logging
 import uuid
+from collections.abc import Mapping
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, DateTime, Float, Integer, String, create_engine, func, select
+from sqlalchemy import JSON, DateTime, Float, Integer, String, create_engine, func, select, update
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
@@ -34,7 +35,8 @@ class PredictionLog(Base):
     model_version: Mapped[str] = mapped_column(String(32), index=True)
     request_features: Mapped[dict] = mapped_column(JSONType)
     source: Mapped[str] = mapped_column(String(32), default="api")
-    # No real delayed ground truth exists for this dataset: stays NULL (see README).
+    # Delayed ground truth (did the customer actually churn?), set later via POST /feedback.
+    # NULL until a label arrives; performance monitoring only uses labelled rows.
     actual_outcome: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
@@ -73,9 +75,34 @@ class PredictionRepository:
 
     def count(self) -> int:
         with self._session() as session:
-            return int(session.scalar(select(func.count()).select_from(PredictionLog)))
+            return int(session.scalar(select(func.count()).select_from(PredictionLog)) or 0)
 
     def recent(self, limit: int = 1000) -> list[PredictionLog]:
         with self._session() as session:
             stmt = select(PredictionLog).order_by(PredictionLog.timestamp.desc()).limit(limit)
+            return list(session.scalars(stmt))
+
+    def set_outcomes(self, outcomes: Mapping[str, int]) -> list[str]:
+        """Attach ground truth to logged predictions. Returns the prediction_ids not found."""
+        missing = []
+        with Session(self.engine) as session, session.begin():
+            for prediction_id, outcome in outcomes.items():
+                result = session.execute(
+                    update(PredictionLog)
+                    .where(PredictionLog.prediction_id == prediction_id)
+                    .values(actual_outcome=outcome)
+                )
+                if result.rowcount == 0:  # type: ignore[attr-defined]  # CursorResult at runtime
+                    missing.append(prediction_id)
+        return missing
+
+    def labelled(self, limit: int = 1000) -> list[PredictionLog]:
+        """Most recent predictions that have a ground-truth outcome."""
+        with self._session() as session:
+            stmt = (
+                select(PredictionLog)
+                .where(PredictionLog.actual_outcome.is_not(None))
+                .order_by(PredictionLog.timestamp.desc())
+                .limit(limit)
+            )
             return list(session.scalars(stmt))

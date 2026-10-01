@@ -1,0 +1,43 @@
+# Alert rules (visible at http://localhost:9090/alerts). Routing them to Slack/e-mail needs
+# an Alertmanager, which is out of scope for the local stack.
+groups:
+  - name: churnops
+    rules:
+      - alert: ChurnOpsApiDown
+        expr: up{job="churnops-api"} == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "ChurnOps API is not answering /metrics"
+
+      - alert: ChurnOpsHighErrorRate
+        expr: |
+          sum(rate(churnops_http_requests_total{status=~"5.."}[5m]))
+            / clamp_min(sum(rate(churnops_http_requests_total[5m])), 1e-9) > 0.05
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "More than 5% of requests fail with 5xx"
+
+      - alert: ChurnOpsSlowPredictions
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(churnops_http_request_latency_seconds_bucket{path="/predict"}[5m]))) > 0.5
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "p95 /predict latency above 500 ms"
+
+      # Thresholds mirror configs/config.yaml (baseline test ROC-AUC 0.84 - max drop 0.05).
+      - alert: ChurnOpsLiveRocAucLow
+        expr: churnops_live_roc_auc < 0.79
+        for: 30m
+        labels: {severity: warning}
+        annotations:
+          summary: "Live ROC-AUC of model v{{ $labels.model_version }} is {{ $value | printf \"%.3f\" }}"
+          description: "Check drift reports, then retrain or roll back (python -m src.training.register --rollback)."
+
+      - alert: ChurnOpsPredictionLogFailing
+        expr: increase(churnops_prediction_log_failures_total[10m]) > 0
+        labels: {severity: warning}
+        annotations:
+          summary: "Prediction-log writes are failing; monitoring data has gaps"

@@ -7,7 +7,7 @@ without internet service) is also enforced, mirroring the training data.
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -16,7 +16,7 @@ from src.config import INTERNET_ADDON_COLS
 YesNo = Literal["No", "Yes"]
 InternetAddon = Literal["No", "No internet service", "Yes"]
 
-EXAMPLE_CUSTOMER = {
+EXAMPLE_CUSTOMER: dict[str, Any] = {
     "customerID": "DEMO-0001",
     "gender": "Female",
     "SeniorCitizen": 0,
@@ -41,7 +41,7 @@ EXAMPLE_CUSTOMER = {
 
 
 class CustomerFeatures(BaseModel):
-    model_config = ConfigDict(extra="forbid", json_schema_extra={"example": EXAMPLE_CUSTOMER})
+    model_config = ConfigDict(extra="forbid", json_schema_extra={"example": cast(dict, EXAMPLE_CUSTOMER)})
 
     customerID: str | None = Field(  # noqa: N815 - matches dataset column name
         default=None, max_length=64, description="Optional trace ID; never used as a feature."
@@ -127,6 +127,29 @@ class ExplanationResponse(BaseModel):
         "Contributions describe how the model used each feature for this prediction. "
         "They are not causal effects."
     )
+
+
+class FeedbackItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    prediction_id: str = Field(min_length=1, max_length=36, description="ID returned by /predict")
+    actual_outcome: Literal[0, 1] = Field(description="1 if the customer actually churned")
+
+
+class FeedbackRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "outcomes": [{"prediction_id": "76087eea-96dc-456a-ab95-a1511b360e72", "actual_outcome": 1}]
+            }
+        },
+    )
+    outcomes: list[FeedbackItem] = Field(min_length=1, max_length=1000)
+
+
+class FeedbackResponse(BaseModel):
+    updated: int
+    not_found: list[str] = Field(description="prediction_ids that are not in the prediction log")
 
 
 class HealthResponse(BaseModel):

@@ -35,24 +35,28 @@ flowchart TD
     L --> M[artifacts/monitoring/…/summary.json + report.html]
     J --> N[Streamlit dashboard]
     M --> N
-    O[GitHub Actions] -.->|lint → tests → secret scan → train → docker build → smoke test| I
+    P[CRM: actual outcome] -->|POST /feedback| J
+    J --> Q[Performance job<br/>live ROC-AUC/F1 vs. test baseline]
+    I -->|/metrics| R[(Prometheus)] --> S[Grafana + alert rules]
+    O[GitHub Actions] -.->|ruff → mypy → tests → secret scan → train → docker build → smoke test| I
 ```
 
 ## Key capabilities
 
 | Area | What is implemented |
 | --- | --- |
-| Data | Reproducible download, schema/category/range validation with explicit errors, raw data never modified |
+| Data | Reproducible download, raw-file validation with explicit errors, Pandera DataFrame contracts between stages, raw data never modified |
+| Config | Hyperparameters, split sizes, costs and monitoring thresholds in `configs/config.yaml` (swap with `CHURNOPS_CONFIG`) |
 | Modeling | One serializable pipeline (feature engineering + preprocessing + estimator), 8 candidates, calibration, cost-based threshold |
-| MLOps | MLflow runs, artifacts, signature, registered versions, `champion` alias, champion/challenger promotion rule |
+| MLOps | MLflow runs, artifacts, signature, registered versions, `champion` alias, champion/challenger promotion rule, one-command rollback |
 | Serving | FastAPI + Pydantic: raw business fields in, probability/class/risk band/model lineage out; single, JSON batch and CSV batch |
 | Explainability | `/explain` returns per-prediction feature contributions (permutation SHAP on readable raw features) |
 | Persistence | Every prediction logged with model version, threshold and request features (PostgreSQL / SQLite) |
-| Monitoring | Evidently drift reports on 5 deterministic simulated scenarios or on logged API traffic |
-| Observability | Streamlit dashboard: KPIs, probability histogram, risk bands, traffic over time, drift status |
-| Quality | 72 tests (unit, pipeline, API contract, MLflow integration, monitoring), ruff, 85% coverage |
+| Monitoring | Evidently drift reports on 5 deterministic simulated scenarios or on logged API traffic; ground-truth feedback loop with live ROC-AUC/PR-AUC/F1 per model version vs. the test baseline |
+| Observability | Prometheus `/metrics` (traffic, latency, outputs, live model quality) + provisioned Grafana dashboard and alert rules; Streamlit dashboard for drift and logs |
+| Quality | 107 tests (unit, pipeline, API contract, MLflow integration, monitoring), ruff, mypy, coverage gate ≥ 80% (currently 86%) |
 | Delivery | Docker image, docker-compose stack (Postgres + MLflow + API + dashboard), CI that retrains and smoke-tests the container |
-| Security | No secrets in repo, env-based config, non-root containers, gitleaks scan, skops model loading with a type allowlist |
+| Security | API-key auth (rotatable keys) and per-client rate limiting on scoring endpoints, no secrets in repo, non-root containers, gitleaks scan, skops model loading with a type allowlist |
 
 ## Dataset and limitations
 
@@ -61,12 +65,16 @@ Source: [IBM GitHub archive](https://github.com/IBM/telco-customer-churn-on-icp4
 
 - **No time axis.** Splits are stratified random, not temporal backtests; the model outputs a risk score for a snapshot.
 - **11 blank `TotalCharges`** — all have `tenure = 0` (never billed). They are kept and imputed inside the pipeline; the API accepts `TotalCharges: null` for the same case.
-- **No delayed ground truth.** `actual_outcome` in the prediction log stays `NULL`; live performance monitoring is out of scope, only input/output drift is monitored.
+- **No real delayed ground truth.** The feedback loop (`POST /feedback` → `actual_outcome`) is fully implemented, but here the labels are *simulated* from the held-out test split (`make simulate-feedback`). In production they would arrive from the CRM once the churn window has passed.
 - **Simulated monitoring.** Drift batches are resampled/perturbed held-out customers, tagged `SIM-*`.
 
 Focused EDA: [`notebooks/01_eda.ipynb`](notebooks/01_eda.ipynb) (target rate, blank charges, churn by contract / internet / payment / support, leakage review).
 
 ## Modeling approach and results
+
+**Configuration.** Candidate hyperparameters, split sizes, the cost ratio, risk bands and monitoring thresholds live in
+[`configs/config.yaml`](configs/config.yaml). Run an experiment with another file: `CHURNOPS_CONFIG=configs/my_experiment.yaml make train`.
+The *feature contract* (columns and allowed categories) deliberately stays in `src/config.py`, because the API's Pydantic schema is typed against it.
 
 **Protocol** (`src/training/train.py`): every candidate is fit on train (4,930 rows) and scored on validation (1,056).
 The winner is the best validation PR-AUC; candidates within 0.005 of the best are tie-broken by Brier score, then simplicity.
@@ -109,8 +117,14 @@ Evaluation artifacts (also logged to MLflow): confusion matrix, ROC/PR curves, c
 ```bash
 make train      # logs 8 candidate runs + 1 selected run, registers a new version of churnops-model
 make promote    # moves alias `champion` if the new version is not worse; exports it to artifacts/champion_model
+make rollback   # moves `champion` back to the version it replaced and re-exports it
 make mlflow-ui  # http://localhost:5000
 ```
+
+**Rollback.** Every promotion tags the new champion with `previous_champion=<old version>`. `make rollback` points the
+alias back (repeatable, it walks back the history) and tags the demoted version `rolled_back`, so a later `make promote`
+will not silently re-promote it (`--force` overrides). Serving from the registry picks up the change on restart; the
+exported image needs a rebuild. Canary / blue-green traffic splitting belongs to the deployment platform and is not built here.
 
 The API loads `models:/churnops-model@champion` — never a hard-coded version or a loose `.pkl`.
 The threshold, feature version and explanation background are stored as **model metadata**, so they are versioned with the model.
@@ -130,6 +144,15 @@ Models are serialized with **skops** (MLflow 3's default) rather than pickle, wh
 | `/batch-predict` | POST | JSON `{"records": [...]}` (≤ `MAX_BATCH_SIZE`) |
 | `/batch-predict/csv` | POST | CSV upload in the original dataset layout |
 | `/explain` | POST | Top feature contributions for one customer |
+| `/feedback` | POST | Attach the real outcome to logged predictions: `{"outcomes": [{"prediction_id": "…", "actual_outcome": 1}]}` |
+| `/metrics` | GET | Prometheus metrics (keep on the internal network) |
+
+**Auth and rate limiting.** Set `API_KEYS=key1,key2` and clients must send `X-API-Key` on `/predict`, `/batch-predict*`,
+`/explain` and `/feedback` (401 otherwise). Two keys at once allow rotation without downtime. `/health`, `/model-info`,
+`/metrics` and `/docs` stay open for probes and scrapers. `RATE_LIMIT_PER_MINUTE` (default 600, 0 = off) limits each
+client (API key, else IP) with a sliding window and returns 429 + `Retry-After`. The limiter is per process; with several
+replicas enforce the global limit at the gateway or with a shared store such as Redis.
+Without `API_KEYS` the service runs unauthenticated and logs a warning (local development only).
 
 ```bash
 curl -X POST localhost:8000/predict -H "Content-Type: application/json" -d '{
@@ -190,7 +213,25 @@ make simulate          # 5 deterministic SIM-* batches from the held-out test sp
 make drift             # Evidently report per scenario → artifacts/monitoring/YYYY-MM-DD/<run>/
 make simulate-traffic  # send the batches through the running API (fills the prediction log)
 make drift-db          # drift on the last 500 logged requests
+make simulate-feedback # send batches through the API AND post their true labels to /feedback
+make performance       # live ROC-AUC / PR-AUC / F1 per model version vs. the frozen test metrics
 ```
+
+**Data quality before drift.** Every batch is checked against the Pandera feature contract (`src/data/schema.py`)
+before Evidently runs, so a broken feed fails as a data-quality incident instead of showing up as "drift".
+
+**Performance monitoring (needs labels).** Drift says the inputs changed; only labels say whether the model got worse.
+`src/monitoring/performance.py` scores the latest labelled predictions per model version and flags a version as
+DEGRADED when ROC-AUC drops more than 0.05 or F1 more than 0.10 below its test metrics (thresholds in `configs/config.yaml`).
+`--fail-on-degradation` exits 1, so a cron job or CI schedule can alert on it. The same metrics are exposed live on `/metrics`.
+
+**Prometheus + Grafana** (`docker compose up`): Prometheus scrapes `/metrics` every 15 s and evaluates the alert rules in
+`ops/prometheus/alerts.yml` (API down, 5xx rate, p95 latency, live ROC-AUC below 0.79, prediction-log failures).
+Grafana (:3000) opens on a provisioned dashboard: traffic, latency, risk mix, average churn probability, live
+ROC-AUC/PR-AUC/F1, labelled volume. Routing alerts to Slack or e-mail needs an Alertmanager (not included).
+
+Example on real held-out customers (500 baseline + 500 maturity-shift, labels fed back): live ROC-AUC 0.825 and F1 0.569 vs.
+test 0.840 / 0.580, so the version is not degraded.
 
 | Scenario | Simulation | Drifted features (of 19) | Avg churn prob. |
 | --- | --- | --- | --- |
@@ -212,8 +253,8 @@ Drift direction is method-aware: Evidently uses distance metrics on large sample
 ### Docker (recommended)
 
 ```bash
-cp .env.example .env         # set POSTGRES_PASSWORD
-docker compose up --build    # API :8000/docs · dashboard :8501 · MLflow :5000
+cp .env.example .env         # set POSTGRES_PASSWORD and GRAFANA_ADMIN_PASSWORD (optionally API_KEYS)
+docker compose up --build    # API :8000/docs · dashboard :8501 · MLflow :5000 · Prometheus :9090 · Grafana :3000
 ```
 
 The API image contains the exported champion (`artifacts/champion_model`, committed to the repo) so it runs without a registry.
@@ -238,18 +279,21 @@ Everything is reproducible: `random_state=42` everywhere; a clean clone reproduc
 ## Testing and CI
 
 ```bash
-make test       # 72 tests, coverage report
+make test       # 107 tests, coverage report
 make test-fast  # skip integration tests
-make lint
+make lint       # ruff
+make typecheck  # mypy
+make check      # lint + typecheck + test (what CI runs)
 ```
 
 | Layer | Examples |
 | --- | --- |
-| Unit | validation errors, TotalCharges conversion, engineered features, risk bands, cost threshold, schemas |
+| Unit | validation errors, Pandera contracts, YAML config, TotalCharges conversion, engineered features, risk bands, cost threshold, schemas, rate limiter, performance/degradation logic |
 | Pipeline | stratified disjoint split, finite transformed inputs, no ID/target leakage, unknown-category handling |
-| API | health, model-info, predict, 422 cases, batch order/count, CSV upload, log row fields, log-failure policy, explain |
-| Integration | log → register → alias → load by alias → predict; exported-model load; fail-fast; skops allowlist; champion/challenger promotion; drift artifact |
+| API | health, model-info, predict, 422 cases, batch order/count, CSV upload, log row fields, log-failure policy, explain, API keys (401), rate limit (429), `/metrics`, feedback, simulated traffic → labels → live ROC-AUC |
+| Integration | log → register → alias → load by alias → predict; exported-model load; fail-fast; skops allowlist; champion/challenger promotion; rollback history; drift artifact |
 
+CI runs on every push and pull request: ruff (lint + format), mypy, the test suite with a coverage gate of 80%, and a gitleaks scan.
 Tests use synthetic, schema-valid data, so CI needs no dataset for them. The CI **container** job then downloads the
 real data, retrains (`--quick`), promotes, builds the image, starts it and checks `/health` and `/predict`.
 
@@ -258,7 +302,7 @@ real data, retrains (`--quick`), promotes, builds the image, starts it and check
 Pick one platform and finish it (e.g. Render). Minimum setup:
 
 1. **PostgreSQL**: create a managed instance; copy its connection string.
-2. **API** (Docker web service from this repo, `Dockerfile`): set `DATABASE_URL=postgresql+psycopg2://…`. The platform's `PORT` is honoured. Health check path: `/health`.
+2. **API** (Docker web service from this repo, `Dockerfile`): set `DATABASE_URL=postgresql+psycopg2://…` and `API_KEYS`. The platform's `PORT` is honoured. Health check path: `/health`.
 3. **Dashboard** (second web service, `Dockerfile.dashboard`): set `DATABASE_URL` (same DB) and `API_URL` (the API's public URL).
 4. Secrets only in the platform's environment settings.
 
@@ -269,14 +313,16 @@ run in local/docker-compose development, and the promoted champion is exported i
 ## Project structure
 
 ```
-app/                 FastAPI service (schemas, model service, DB, routes)
+app/                 FastAPI service (schemas, model service, DB, routes, security, Prometheus metrics)
+configs/config.yaml  hyperparameters, split sizes, decision policy, monitoring thresholds
 src/
-  config.py          single source of truth for the feature contract and paths
+  config.py          feature contract + paths; loads configs/config.yaml
   risk.py            risk band labels
-  data/              download, validate, split
+  data/              download, validate (raw file), schema (Pandera contracts), split
   features/build.py  FeatureEngineer + preprocessing + pipeline factory
-  training/          baseline, train, evaluate, register (promotion + export), serialization
-  monitoring/        simulated batch generator, Evidently drift job
+  training/          baseline, train, evaluate, register (promotion, rollback, export), serialization
+  monitoring/        simulated batch generator, Evidently drift job, performance job
+ops/                 Prometheus scrape config + alert rules, Grafana provisioning + dashboard
 dashboard/app.py     Streamlit monitoring UI (read-only)
 notebooks/01_eda.ipynb
 tests/               unit / api / integration
@@ -287,7 +333,8 @@ Dockerfile, Dockerfile.dashboard, docker-compose.yml, Makefile, .github/workflow
 ## Future work
 
 - Scheduled monitoring and retraining (Prefect) with automatic challenger evaluation
-- Performance monitoring once delayed labels exist (`actual_outcome`)
+- Real delayed labels from a CRM instead of simulated feedback
+- Alertmanager routing (Slack/e-mail) and canary traffic splitting on the deployment platform
 - Bootstrap confidence intervals for model comparison
-- Prometheus metrics, load testing (Locust/k6), OpenTelemetry tracing
+- Load testing (Locust/k6), OpenTelemetry tracing
 - DVC or object storage for data and model artifacts

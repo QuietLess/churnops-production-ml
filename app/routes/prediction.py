@@ -15,7 +15,8 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import ValidationError
 
 from app.db import PredictionRepository, new_prediction_id, utcnow
-from app.dependencies import get_model_service, get_repository, get_settings
+from app.dependencies import get_metrics, get_model_service, get_repository, get_settings
+from app.metrics import ApiMetrics
 from app.model_service import ModelService
 from app.schemas import (
     BatchRequest,
@@ -34,6 +35,7 @@ def _run(
     customers: list[CustomerFeatures],
     service: ModelService,
     repo: PredictionRepository | None,
+    metrics: ApiMetrics,
     source: str,
 ) -> list[PredictionResponse]:
     features = [c.features() for c in customers]
@@ -48,6 +50,7 @@ def _run(
         {"prediction_id": new_prediction_id(), "customerID": c.customerID, **s}
         for c, s in zip(customers, scored, strict=True)
     ]
+    metrics.observe_predictions(results, service.model_version, source)
     logged = False
     if repo is not None:
         rows = [
@@ -70,6 +73,7 @@ def _run(
             repo.log_many(rows)
             logged = True
         except Exception:
+            metrics.log_failures.inc()
             logger.exception("Prediction log write failed", extra={"event": "log_write_failed"})
     return [
         PredictionResponse(
@@ -94,8 +98,9 @@ def predict(
     customer: CustomerFeatures,
     service: ModelService = Depends(get_model_service),
     repo: PredictionRepository | None = Depends(get_repository),
+    metrics: ApiMetrics = Depends(get_metrics),
 ) -> PredictionResponse:
-    return _run([customer], service, repo, source="api")[0]
+    return _run([customer], service, repo, metrics, source="api")[0]
 
 
 @router.post("/batch-predict", response_model=BatchResponse)
@@ -104,9 +109,10 @@ def batch_predict(
     service: ModelService = Depends(get_model_service),
     repo: PredictionRepository | None = Depends(get_repository),
     settings: Settings = Depends(get_settings),
+    metrics: ApiMetrics = Depends(get_metrics),
 ) -> BatchResponse:
     _check_size(len(batch.records), settings)
-    preds = _run(batch.records, service, repo, source="batch")
+    preds = _run(batch.records, service, repo, metrics, source="batch")
     return BatchResponse(count=len(preds), predictions=preds)
 
 
@@ -116,6 +122,7 @@ def batch_predict_csv(
     service: ModelService = Depends(get_model_service),
     repo: PredictionRepository | None = Depends(get_repository),
     settings: Settings = Depends(get_settings),
+    metrics: ApiMetrics = Depends(get_metrics),
 ) -> BatchResponse:
     """Upload a CSV in the original dataset layout. A `Churn` column, if present, is ignored."""
     try:
@@ -140,7 +147,7 @@ def batch_predict_csv(
             errors.append({"row": i, "errors": exc.errors(include_url=False, include_input=False)})
     if errors:
         raise HTTPException(422, {"message": f"{len(errors)} invalid rows", "rows": errors[:20]})
-    preds = _run(customers, service, repo, source="csv")
+    preds = _run(customers, service, repo, metrics, source="csv")
     return BatchResponse(count=len(preds), predictions=preds)
 
 

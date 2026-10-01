@@ -2,7 +2,10 @@
 -r requirements-api.txt
 -r requirements-dashboard.txt
 evidently==0.7.23
+pandera==0.33.1
 pytest==9.1.1
 pytest-cov==7.1.0
 ruff==0.16.9
+mypy==2.3.1
+types-PyYAML==6.0.12.20260906
 python-dotenv==1.2.2

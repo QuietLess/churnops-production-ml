@@ -18,6 +18,7 @@ WORKDIR /app
 COPY requirements-api.txt .
 RUN pip install -r requirements-api.txt
 
+COPY configs ./configs
 COPY src ./src
 COPY app ./app
 # Exported champion (produced by `make promote`). Lineage lives in its MLmodel metadata.
