@@ -1,0 +1,41 @@
+# Render Blueprint: one-click deploy of the API, the dashboard and a PostgreSQL prediction log.
+# Render dashboard -> New -> Blueprint -> pick this repository -> Apply.
+# After the first deploy, set API_URL on the dashboard service to the API's public URL.
+# Free plans sleep when idle (the first request after a pause takes ~1 min) and have limited RAM;
+# check Render's current free-tier limits (e.g. how long a free database is kept).
+
+services:
+  - type: web
+    name: churnops-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: churnops-db
+          property: connectionString
+      # Public demo: scoring stays open so visitors can try /docs, but each client is rate limited.
+      # For a private deployment add API_KEYS (comma-separated) in the service's Environment tab.
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "60"
+      - key: LOG_LEVEL
+        value: INFO
+
+  - type: web
+    name: churnops-dashboard
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.dashboard
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: churnops-db
+          property: connectionString
+      - key: API_URL
+        sync: false # e.g. https://churnops-api.onrender.com
+
+databases:
+  - name: churnops-db
+    plan: free

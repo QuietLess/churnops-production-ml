@@ -4,9 +4,23 @@ An end-to-end machine-learning system that takes a telecom churn model from raw 
 through experiment tracking, model registry, API serving, containerization, automated
 testing, prediction logging and drift monitoring.
 
-![CI](https://github.com/<your-username>/churnops-production-ml/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/QuietLess/churnops-production-ml/actions/workflows/ci.yml/badge.svg)](https://github.com/QuietLess/churnops-production-ml/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.12-blue)
+![Tests](https://img.shields.io/badge/tests-107%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-86%25-brightgreen)
 
-**Live API:** `<URL>/docs` · **Monitoring dashboard:** `<URL>`
+<!-- After deploying (see Deployment, one click with render.yaml), add here:
+**Live API:** https://<your-api>.onrender.com/docs · **Monitoring dashboard:** https://<your-dashboard>.onrender.com -->
+
+![ChurnOps architecture](docs/images/architecture.png)
+
+| FastAPI service (Swagger) | Monitoring dashboard (Streamlit) |
+| --- | --- |
+| ![Swagger UI](docs/images/swagger.png) | ![Monitoring dashboard](docs/images/dashboard.png) |
+
+| Live ROC-AUC after ground-truth feedback | Drift per simulated scenario |
+| --- | --- |
+| ![Live performance](docs/images/live_performance.png) | ![Drift scenarios](docs/images/drift_scenarios.png) |
 
 > **Note:** The IBM Telco dataset is a cross-sectional sample dataset. The project models
 > churn **risk** from a customer snapshot and uses **simulated** production batches to
@@ -132,7 +146,11 @@ The threshold, feature version and explanation background are stored as **model 
 Models are serialized with **skops** (MLflow 3's default) rather than pickle, which only loads explicitly trusted types.
 `src/training/serialization.py` computes the required types and refuses anything outside an allowlist (`sklearn`, `lightgbm`, `numpy`, `src.`).
 
-<!-- Screenshots: docs/images/mlflow_runs.png, docs/images/mlflow_registry.png -->
+![Model comparison](docs/images/model_comparison.png)
+
+![Cost by threshold](docs/images/cost_threshold.png)
+
+![Feature importance](docs/images/feature_importance.png)
 
 ## API
 
@@ -204,7 +222,6 @@ Unknown categories are rejected at the API boundary on purpose; the encoder's `h
 - Every response carries `X-Process-Time-Ms`. Observed locally: ~15 ms per single prediction after warm-up; ~50 ms for `/explain`. These are local measurements, not an SLA.
 - Logs are JSON lines.
 
-<!-- Screenshot: docs/images/swagger.png -->
 
 ## Monitoring (simulated)
 
@@ -230,8 +247,10 @@ DEGRADED when ROC-AUC drops more than 0.05 or F1 more than 0.10 below its test m
 Grafana (:3000) opens on a provisioned dashboard: traffic, latency, risk mix, average churn probability, live
 ROC-AUC/PR-AUC/F1, labelled volume. Routing alerts to Slack or e-mail needs an Alertmanager (not included).
 
-Example on real held-out customers (500 baseline + 500 maturity-shift, labels fed back): live ROC-AUC 0.825 and F1 0.569 vs.
-test 0.840 / 0.580, so the version is not degraded.
+Example run (all 5 scenarios through the API with the champion model, 500 labelled predictions each): live ROC-AUC is
+0.837 for pricing_shift and 0.832 for baseline, about 0.80 for maturity_shift and contract_mix, and 0.780 for channel_shift,
+against a test baseline of 0.840. Drift size did not predict the damage: channel_shift (11 drifted features) lost more than
+maturity_shift (12).
 
 | Scenario | Simulation | Drifted features (of 19) | Avg churn prob. |
 | --- | --- | --- | --- |
@@ -246,7 +265,6 @@ electronic-check payers skew to fiber, etc.), which is why the resampling scenar
 The pricing scenario perturbs values directly, so only the targeted feature drifts.
 Drift direction is method-aware: Evidently uses distance metrics on large samples and p-value tests on small ones.
 
-<!-- Screenshots: docs/images/dashboard.png, docs/images/evidently.png -->
 
 ## Local setup
 
@@ -299,7 +317,13 @@ real data, retrains (`--quick`), promotes, builds the image, starts it and check
 
 ## Deployment
 
-Pick one platform and finish it (e.g. Render). Minimum setup:
+**One click with Render:** the repo ships a [`render.yaml`](render.yaml) Blueprint. In Render choose
+*New → Blueprint*, select this repository and apply: it creates the API, the dashboard and a PostgreSQL
+database and wires `DATABASE_URL`. Then set `API_URL` on the dashboard to the API's public URL. The public
+demo leaves scoring open (rate limited to 60 requests/minute) so visitors can try `/docs`; add `API_KEYS`
+for a private deployment. Free instances sleep when idle, so the first request can take about a minute.
+
+Any other Docker host works the same way. Minimum setup:
 
 1. **PostgreSQL**: create a managed instance; copy its connection string.
 2. **API** (Docker web service from this repo, `Dockerfile`): set `DATABASE_URL=postgresql+psycopg2://…` and `API_KEYS`. The platform's `PORT` is honoured. Health check path: `/health`.
